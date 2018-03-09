@@ -7,24 +7,21 @@
 
 function time2secs {
 
-    # secsperfield=(3600,60,1)
-        
-    # IFS=":" set -A array $1
-    # echo "${array[@]}"
-
-    # return array
+    # Split an hh:mm:ss.ss time stamp on colon and convert to seconds
 
     IFS=":"
     set -- $1
     hr=$(($1*3600))
     min=$(($2*60))
-    # sec=${3%.*}
     sec=$(($3*1))
+
     echo "$((hr+min+sec))"
     
 }
 
 function timediff {
+
+    # Compute the difference, in seconds, between two hh:mm:ss.ss time stamps
 
     t1=$(time2secs $1)
     t2=$(time2secs $2)
@@ -35,18 +32,21 @@ function timediff {
 
 function walltime {
 
+    # Get the walltime for a PBS job, PBS_JOBID passed as a parameter
     echo $(qstat -f $1 | grep Resource_List.walltime | cut -d= -f2)
 
 }
 
 function elapsedtime {
 
+    # Get the elapsed time for a PBS job, PBS_JOBID passed as a parameter
     echo $(qstat -f $1 | grep resources_used.walltime | cut -d= -f2)
 
 }
 
 function timeleft {
 
+    # Compute the remaining time for a PBS job, PBS_JOBID passed as a parameter
     wtime=$(walltime $1)
     etime=$(elapsedtime $1)
 
