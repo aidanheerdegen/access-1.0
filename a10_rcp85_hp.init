@@ -161,6 +161,8 @@ ncplproc_ice=1          #mono-cpu coupling
 #     1   : Gregorian (365/366 days per year)
 #     n   : Equal months of "n" days (30 for 30 day months)
 
+cd $exphome
+
 ##: default set as below (for era40 and ncep2 forcing)
 caltype=1               #0, 1 or n (eg, 30 for 30 day months)
 cal_type="'gregorian'"
@@ -170,19 +172,20 @@ iniyear=2005;	finalyear=2100;		typeset -Z4 iniyear  finalyear
 inimonth=1;	finalmonth=12;		typeset -Z2 inimonth finalmonth
 iniday=1;	finalday=31;		typeset -Z2 iniday   finalday
 
-inidate=${iniyear}${inimonth}${iniday}			#YYYYMMDD
-finaldate=${finalyear}${finalmonth}${finalday}		#YYYYMMDD
-
 #-- Duration of a run/chunk (HERE is most often visited for test/short runs!)
 nyear=0			# number of years
 nmonth=3		# number of months
 nday=0 			# number of days
   
+# Source updated date parameters if the file exists
+FILE="date_params" && test -f $FILE && source $FILE
+
+inidate=${iniyear}${inimonth}${iniday}			#YYYYMMDD
+finaldate=${finalyear}${finalmonth}${finalday}		#YYYYMMDD
+
 #
 ## 2.2 Date info of this run
 #
-
-cd $exphome
 
 typeset -Z4 year; typeset -Z2 month day
 if [ ! -f ${RUNID}.date ]; then

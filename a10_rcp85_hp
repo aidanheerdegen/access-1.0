@@ -24,7 +24,7 @@
 #PBS -q express
 #PBS -l ncpus=144
 #PBS -l mem=144gb
-#PBS -l walltime=02:00:00
+#PBS -l walltime=04:00:00
 #PBS -W umask=0022
 set -x
 set -eu
@@ -36,6 +36,7 @@ set -eu
 # Where coupled model was built
 # Change as appropriate
 ACCESS_BINDIR=/short/v45/aph502/ACCESS/bin
+
 
 export SPEED_TEST=false
 
@@ -197,209 +198,225 @@ export OASISRUNDIR=$WORKDIR/$OASISDIR
 export AUTO_RESTART=false
 export UM_SECTOR_SIZE=2048
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-### START of Users top script insert
-# it's sourced with . which means it's executed inside the current shell
-
-if test -f $ACCESS_INIT; then
-. $ACCESS_INIT
-else
-  echo "ERROR: User top script insert $ACCESS_INIT not found"
-  exit 1
-fi
-### END of Users top script insert
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
 ###################################################
-# CORE DUMP SAVING                                #
-###################################################
-
-export SAVECORE=true
-export COREDUMP=$OASISRUNDIR/core.$$
-
-###################################################
-# User defined environment variables              #
-###################################################
-
-export FASTRUN=true
-
-###################################################
-# Standard directories for input files etc        #
-# ILP: table from subindep_FilDir                 #
-###################################################
-
-export UM_SPECTRAL=$UMDIR/vn$VN/ctldata/spectral
-export UM_ANCIL_A=$UMDIR/vn$VN/ancil/atmos/n96
-export UM_BUILD_GL=/not-defined
-export INPUT_DATA=/not-defined
-
-# same but to match the jobs for UM7.3
-export CENTRAL=$UMDIR/vn$VN
-export ANCIL_ATMOS=/projects/access/data/ancil/HadGEM3_cal365
-export CMIP5ANCIL=/projects/access/data/ancil/CMIP5
-export ANCIL_LAND=/projects/access/data/ancil/access_v2
-# Need this one for a HadGEM2 type run
-export HGPKG2=$CENTRAL/HGPKG2-365
-###################################################
-# User defined output directories                 #
-###################################################
-
-export UM_DATAW=$DATADIR/$OASISDIR	# User-specific read/write data files
-UM_DATAM=$OASISRUNDIR		# Output Dumps/PP/etc. Generated names
-UM_TMPDIR=$UM_DATAM/ATM_RUNDIR/tmp
-export DATAW=$UM_DATAW
-export DATAM=$UM_DATAM   
-#
-[ ! -d $UM_DATAW/bin ] && mkdir -p $UM_DATAW/bin
-[ ! -d $UM_DATAM/bin ] && mkdir -p $UM_DATAM/bin
-
-###################################################
-# Directory pointers in environment variables     #
-###################################################
-
-# For files required only during the run
-export TEMP=${UM_TMPDIR}
-export TMPDIR=${TEMP}
-
-# For executable files
-EXEC=$UMDIR/vn$VN/$TARGET_MC/exec
-
-SCRIPT=$ACCESS_BINDIR/um_scripts
-
-PATH=$PATH:$SCRIPT:$EXEC:$PATH
-# verify that we get the scripts from the correct location
-echo "PATH used = $PATH"
-whence qsexecute
-
-###################################################
-# Directories on TARGET_MC                        #
-###################################################
-
-PROD_TARGET=$DATADIR
-DATAW_TARGET=$DATAW
-DATAM_TARGET=$DATAM
-
-# Set false to always keep output from all PEs
-export UM_NAM_MAX_SECONDS=${UM_NAM_MAX_SECONDS:-300}
-UM_DEL_MPP_OUTPUT=false  
-# gol124: append only tail instead of whole output files
-# otherwise for large jobs the output may get so large that
-# the system would terminate the job during the append operation
-export UM_TAIL=true
-
-# Indicates whether operational model
-export OPERATIONAL=false       
-# Switch for automatic output processing
-export AUTOMATIC_PP=false   
-# Output class for resubmitted jobs
-export OUT_CLASSR=leave    
-# Output class for start-run jobs   
-export OUT_CLASS=leave         
-
-###################################################
-# Variables relating to reconfiguration           #
-###################################################
-
-# Timer for reconfiguration       
-export RCF_TIMER=false 
-# Delete recon output on success
-RCF_DEL_MPP_OUTPUT=true 
-# gol124: save for next run?
-RCF_DEL_MPP_OUTPUT=false
-
-# Level of print output from reconfiguration
-export RCF_PRINTSTATUS=${RCF_PRINTSTATUS:-2}
-
-# Indicates if Atmos reconfiguration step
-# gol124: use file from previous run
-export RCF_ATMOS=false
-# Indicates if Ocean reconfiguration step
-export RCF_OCEAN=false 
-# Flag to delete old histfile in NRUN
-export PURGEHIST=true          
-# Indicates whether OUTPUT2 is printed
-LONGOUTPUT=false        
-# PrStatus_Min, PrStatus_Normal, PrStatus_Oper or PrStatus_Diag 
-export PRINT_STATUS=${PRINT_STATUS:-PrStatus_Diag} 
-# perftrace options for perfview
-export PERFTRACE=false 
-export PERFVIEWOPT="0"
-
-# load module, reconfiguration
-export LOADRECON=$UMDIR/vn$VN/$TARGET_MC/execs/qxreconf
-
-###################################################
-#  Model control files                            #
-###################################################
-
-# Switch for printing files
-export PRINT_INPUT=false 
-# Root for system STASHmaster files
-export STASHMSTR=$UMDIR/vn$VN/ctldata/STASHmaster  
-# Root for system ANCILmaster files
-export ANCILMSTR=$UMDIR/vn$VN/ctldata/ANCILmaster  
-# Destination of standard output files
-export UM_STDOUT_FILE=$DATAW/$RUNID.fort6.pe  
-# Destination of recon atmos output files
-export RCF_STDOUT_FILE_A=$DATAW/$RUNID.fort6.rcfa.pe  
-# Destination of recon ocean output files
-export RCF_STDOUT_FILE_O=$DATAW/$RUNID.fort6.rcfo.pe  
-# Output from pe0 for model
-UM_MPP_OUTPUT="$UM_STDOUT_FILE"0          
-# Output from pe0 for recon (atm)
-RCF_MPP_OUTPUT_A="$RCF_STDOUT_FILE_A"0         
-# Output from pe0 for recon (ocn)
-RCF_MPP_OUTPUT_O="$RCF_STDOUT_FILE_O"0         
-# Output file for the job step
-PREFIXT=""
-export OUTPUT=$DATAW/$PREFIXT$RUNID.out       
-# Running submodels
-export UM_ATMOS=true 
-export UM_OCEAN=false 
-export UM_SLAB=false 
-export UM_WAVE=false
-
-# Indicates automatic postprocessing
-export UM_AUTOPP=$AUTOMATIC_PP
-# Indicates whether MPP run
-UM_PROCT=true 
-# Indicates a suite run
-UM_SUITE=false 
-UM_START_MAIL=false
-UM_END_MAIL=false
-UM_LOUTPUT=200000
-
-OPRESTART='' # Pretend we've started from the UMUI
-
-# Check current dir
-echo "PWD: $PWD"
-
-####################################################
-# Finally call the revised top level script for UM #
-####################################################
-set +x
-echo '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
-echo '@@@ starting UMScr_TopLevel:' `whence UMScr_TopLevel`
-echo '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
-set -x
-FCODE=-999
-
-which UMScr_TopLevel
-. UMScr_TopLevel
-export RC=$?
-
-###################################################
-# USERS bottom script insert       start          #
+# USERS bottom script source       start          #
+# Makes functions available which we call later   #
 ###################################################
 if test -f $ACCESS_END; then
-. $ACCESS_END
+    . $ACCESS_END
 else
-  echo "ERROR: User bottom script insert $ACCESS_END not found"
-  exit 1
+    echo "ERROR: User bottom script insert $ACCESS_END not found"
+    
 fi
-###################################################
-# USERS bottom script insert       end            #
-###################################################
+
+while true
+do
+
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ### START of Users top script insert
+    # it's sourced with . which means it's executed inside the current shell
+
+    if test -f $ACCESS_INIT; then
+	. $ACCESS_INIT
+    else
+	echo "ERROR: User top script insert $ACCESS_INIT not found"
+	exit 1
+    fi
+    ### END of Users top script insert
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+    ###################################################
+    # CORE DUMP SAVING                                #
+    ###################################################
+
+    export SAVECORE=true
+    export COREDUMP=$OASISRUNDIR/core.$$
+
+    ###################################################
+    # User defined environment variables              #
+    ###################################################
+
+    export FASTRUN=true
+
+    ###################################################
+    # Standard directories for input files etc        #
+    # ILP: table from subindep_FilDir                 #
+    ###################################################
+
+    export UM_SPECTRAL=$UMDIR/vn$VN/ctldata/spectral
+    export UM_ANCIL_A=$UMDIR/vn$VN/ancil/atmos/n96
+    export UM_BUILD_GL=/not-defined
+    export INPUT_DATA=/not-defined
+
+    # same but to match the jobs for UM7.3
+    export CENTRAL=$UMDIR/vn$VN
+    export ANCIL_ATMOS=/projects/access/data/ancil/HadGEM3_cal365
+    export CMIP5ANCIL=/projects/access/data/ancil/CMIP5
+    export ANCIL_LAND=/projects/access/data/ancil/access_v2
+    # Need this one for a HadGEM2 type run
+    export HGPKG2=$CENTRAL/HGPKG2-365
+    ###################################################
+    # User defined output directories                 #
+    ###################################################
+
+    export UM_DATAW=$DATADIR/$OASISDIR	# User-specific read/write data files
+    UM_DATAM=$OASISRUNDIR		# Output Dumps/PP/etc. Generated names
+    UM_TMPDIR=$UM_DATAM/ATM_RUNDIR/tmp
+    export DATAW=$UM_DATAW
+    export DATAM=$UM_DATAM   
+    #
+    [ ! -d $UM_DATAW/bin ] && mkdir -p $UM_DATAW/bin
+    [ ! -d $UM_DATAM/bin ] && mkdir -p $UM_DATAM/bin
+
+    ###################################################
+    # Directory pointers in environment variables     #
+    ###################################################
+
+    # For files required only during the run
+    export TEMP=${UM_TMPDIR}
+    export TMPDIR=${TEMP}
+
+    # For executable files
+    EXEC=$UMDIR/vn$VN/$TARGET_MC/exec
+
+    SCRIPT=$ACCESS_BINDIR/um_scripts
+
+    PATH=$PATH:$SCRIPT:$EXEC:$PATH
+    # verify that we get the scripts from the correct location
+    echo "PATH used = $PATH"
+    whence qsexecute
+
+    ###################################################
+    # Directories on TARGET_MC                        #
+    ###################################################
+
+    PROD_TARGET=$DATADIR
+    DATAW_TARGET=$DATAW
+    DATAM_TARGET=$DATAM
+
+    # Set false to always keep output from all PEs
+    export UM_NAM_MAX_SECONDS=${UM_NAM_MAX_SECONDS:-300}
+    UM_DEL_MPP_OUTPUT=false  
+    # gol124: append only tail instead of whole output files
+    # otherwise for large jobs the output may get so large that
+    # the system would terminate the job during the append operation
+    export UM_TAIL=true
+
+    # Indicates whether operational model
+    export OPERATIONAL=false       
+    # Switch for automatic output processing
+    export AUTOMATIC_PP=false   
+    # Output class for resubmitted jobs
+    export OUT_CLASSR=leave    
+    # Output class for start-run jobs   
+    export OUT_CLASS=leave         
+
+    ###################################################
+    # Variables relating to reconfiguration           #
+    ###################################################
+
+    # Timer for reconfiguration       
+    export RCF_TIMER=false 
+    # Delete recon output on success
+    RCF_DEL_MPP_OUTPUT=true 
+    # gol124: save for next run?
+    RCF_DEL_MPP_OUTPUT=false
+
+    # Level of print output from reconfiguration
+    export RCF_PRINTSTATUS=${RCF_PRINTSTATUS:-2}
+
+    # Indicates if Atmos reconfiguration step
+    # gol124: use file from previous run
+    export RCF_ATMOS=false
+    # Indicates if Ocean reconfiguration step
+    export RCF_OCEAN=false 
+    # Flag to delete old histfile in NRUN
+    export PURGEHIST=true          
+    # Indicates whether OUTPUT2 is printed
+    LONGOUTPUT=false        
+    # PrStatus_Min, PrStatus_Normal, PrStatus_Oper or PrStatus_Diag 
+    export PRINT_STATUS=${PRINT_STATUS:-PrStatus_Diag} 
+    # perftrace options for perfview
+    export PERFTRACE=false 
+    export PERFVIEWOPT="0"
+
+    # load module, reconfiguration
+    export LOADRECON=$UMDIR/vn$VN/$TARGET_MC/execs/qxreconf
+
+    ###################################################
+    #  Model control files                            #
+    ###################################################
+
+    # Switch for printing files
+    export PRINT_INPUT=false 
+    # Root for system STASHmaster files
+    export STASHMSTR=$UMDIR/vn$VN/ctldata/STASHmaster  
+    # Root for system ANCILmaster files
+    export ANCILMSTR=$UMDIR/vn$VN/ctldata/ANCILmaster  
+    # Destination of standard output files
+    export UM_STDOUT_FILE=$DATAW/$RUNID.fort6.pe  
+    # Destination of recon atmos output files
+    export RCF_STDOUT_FILE_A=$DATAW/$RUNID.fort6.rcfa.pe  
+    # Destination of recon ocean output files
+    export RCF_STDOUT_FILE_O=$DATAW/$RUNID.fort6.rcfo.pe  
+    # Output from pe0 for model
+    UM_MPP_OUTPUT="$UM_STDOUT_FILE"0          
+    # Output from pe0 for recon (atm)
+    RCF_MPP_OUTPUT_A="$RCF_STDOUT_FILE_A"0         
+    # Output from pe0 for recon (ocn)
+    RCF_MPP_OUTPUT_O="$RCF_STDOUT_FILE_O"0         
+    # Output file for the job step
+    PREFIXT=""
+    export OUTPUT=$DATAW/$PREFIXT$RUNID.out       
+    # Running submodels
+    export UM_ATMOS=true 
+    export UM_OCEAN=false 
+    export UM_SLAB=false 
+    export UM_WAVE=false
+
+    # Indicates automatic postprocessing
+    export UM_AUTOPP=$AUTOMATIC_PP
+    # Indicates whether MPP run
+    UM_PROCT=true 
+    # Indicates a suite run
+    UM_SUITE=false 
+    UM_START_MAIL=false
+    UM_END_MAIL=false
+    UM_LOUTPUT=200000
+
+    OPRESTART='' # Pretend we've started from the UMUI
+
+    # Check current dir
+    echo "PWD: $PWD"
+
+    ####################################################
+    # Finally call the revised top level script for UM #
+    ####################################################
+    set +x
+    echo '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    echo '@@@ starting UMScr_TopLevel:' `whence UMScr_TopLevel`
+    echo '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+    set -x
+    FCODE=-999
+
+    which UMScr_TopLevel
+    . UMScr_TopLevel
+    export RC=$?
+
+    # Function defined in user final script to postprocess data
+    finalise_model
+
+    if ! run_again; then
+	# Exit loop as there is not enough time to run again
+	break
+    fi
+
+done
+
+# Submit new PBS job if appropriate
+if continue_experiment; then
+    submit_run()
+fi
 
 exit $RC

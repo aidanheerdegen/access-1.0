@@ -1,0 +1,16 @@
+echo "Sourcing date_params"
+
+#-- Initial and Final Date of the Experiment
+iniyear=2005;	finalyear=2006;		typeset -Z4 iniyear  finalyear
+inimonth=1;	finalmonth=12;		typeset -Z2 inimonth finalmonth
+iniday=1;	finalday=31;		typeset -Z2 iniday   finalday
+
+#-- Duration of a run/chunk (HERE is most often visited for test/short runs!)
+nyear=0			# number of years
+nmonth=3		# number of months
+nday=0 			# number of days
+
+# Define the minimum time that must be left of the walltime for another
+# experiment to be run. This will prevent the PBS job from running over
+# allocated walltime
+RUN_TIME='1:30:00'
