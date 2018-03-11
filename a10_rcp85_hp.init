@@ -177,8 +177,15 @@ nyear=0			# number of years
 nmonth=3		# number of months
 nday=0 			# number of days
   
+pwd
+ls
 # Source updated date parameters if the file exists
-FILE="date_params" && test -f $FILE && source $FILE
+FILE="date_params" 
+if [ -f $FILE ];
+then 
+   source $FILE
+fi
+
 
 inidate=${iniyear}${inimonth}${iniday}			#YYYYMMDD
 finaldate=${finalyear}${finalmonth}${finalday}		#YYYYMMDD
@@ -976,5 +983,6 @@ export ACCESSRUNCMD="--mca mpi_paffinity_alone 1 \
 module purge
 module load intel-fc
 module load openmpi/1.6.5
+module load pbs
 module list
 
