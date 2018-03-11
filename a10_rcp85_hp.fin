@@ -312,7 +312,7 @@ function process_results {
 function finalise_model {
 
     if check_error $FCODE; then
-	process_results
+       process_results
     fi
 
 }
@@ -322,32 +322,48 @@ function run_again {
     # Check if here is enough time to run another experiment
 
     # Check whether final date is reached
+    if ! date_check ; then
+       return false
+    fi
     tleft=$(timeleft $PBS_JOBID)
     rtime=$(time2secs $RUN_TIME)
     if [[ $tleft -gt $rtime ]]; then
-	echo "Run another experiment as $tleft > $rtime" >> ${expid}.log
-	return true
+       echo "Run another experiment as $tleft > $rtime"
+       return true
     else
-	return false
+       echo "Not enough time to Run another experiment as $tleft < $rtime"
+       return false
     fi
 
 }
 
+function date_check {
+
+    # Check whether final date is reached
+    echo "Current date: $nextdate"
+    echo "Final date: $finaldate"
+    if [[ $nextdate -gt $finaldate ]]; then
+        return false
+    else
+        return true
+    fi
+
+}
 
 function continue_experiment {
 
     # Check whether final date is reached
-    if [[ $nextdate -gt $finaldate ]]; then
-	echo "Experiment over"
-	echo "`date` :  Experiment over" >> ${expid}.log
-	return false
+    if ! date_check ; then
+        echo "Experiment over"
+        echo "`date` :  Experiment over" >> ${expid}.log
+        return false
     elif [ -f ${expid}.suspend ] ; then
-	echo "Suspending experiment"
-	echo "`date` : ${jobnum} ${enddate} - Experiment suspended" >> ${expid}.log
-	echo "To resume execute this command: qsub um73-auscom.xe"
-	return false
+        echo "Suspending experiment"
+        echo "`date` : ${jobnum} ${enddate} - Experiment suspended" >> ${expid}.log
+        echo "To resume execute this command: qsub um73-auscom.xe"
+	    return false
     else
-	return true
+        return true
     fi
 
 }
