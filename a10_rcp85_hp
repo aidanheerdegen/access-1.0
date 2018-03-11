@@ -21,7 +21,7 @@
 # ACCESS_INIT - ksh script to init oasis, cice and mom
 # ACCESS_END - ksh script to postprocess output and handle auto restarts
 #
-#PBS -q express
+#PBS -q normal
 #PBS -l ncpus=144
 #PBS -l mem=144gb
 #PBS -l walltime=04:00:00
@@ -217,9 +217,9 @@ do
     # it's sourced with . which means it's executed inside the current shell
 
     if test -f $ACCESS_INIT; then
-	. $ACCESS_INIT
+	  . $ACCESS_INIT
     else
-	echo "ERROR: User top script insert $ACCESS_INIT not found"
+	  echo "ERROR: User top script insert $ACCESS_INIT not found"
 	exit 1
     fi
     ### END of Users top script insert
@@ -407,15 +407,23 @@ do
     # Function defined in user final script to postprocess data
     finalise_model
 
-    if ! run_again; then
-	# Exit loop as there is not enough time to run again
-	break
+    if run_again; then
+       echo "Start another run"
+    else
+       # Exit loop as there is not enough time to run again
+       echo "Don't run again this submit"
+       break
     fi
+
+    echo "End of never ending loop"
 
 done
 
+echo "Exit never ending loop"
+
 # Submit new PBS job if appropriate
 if continue_experiment; then
+    # Submit a new PBS job
     submit_run()
 fi
 

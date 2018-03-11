@@ -1,7 +1,7 @@
 echo "Sourcing date_params"
 
 #-- Initial and Final Date of the Experiment
-iniyear=2005;	finalyear=2006;		typeset -Z4 iniyear  finalyear
+iniyear=2005;	finalyear=2007;		typeset -Z4 iniyear  finalyear
 inimonth=1;	finalmonth=12;		typeset -Z2 inimonth finalmonth
 iniday=1;	finalday=31;		typeset -Z2 iniday   finalday
 
