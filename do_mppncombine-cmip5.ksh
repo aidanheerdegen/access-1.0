@@ -58,9 +58,8 @@ echo "Combining ocean data files with mppnccombine"
 for histfile in `ls *.nc.0000`; do
   newfile=${histfile%.*}              #drop the appendix '.0000'!
 #  ~dhb599/ACCESS/bin/mppnccombine.XE -v -r $newfile ${newfile}.????
-  $mppncombine_exec -v -r $newfile ${newfile}.???? &
+  $mppncombine_exec -n4 -z -v -r $newfile ${newfile}.????
 done
-wait
 
 echo "Moving collated ocean data files to history"
 for histfile in `ls ocean*.nc`; do
