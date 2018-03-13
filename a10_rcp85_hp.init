@@ -168,7 +168,7 @@ caltype=1               #0, 1 or n (eg, 30 for 30 day months)
 cal_type="'gregorian'"
 
 #-- Initial and Final Date of the Experiment
-iniyear=2005;	finalyear=2100;		typeset -Z4 iniyear  finalyear
+iniyear=2005;	finalyear=2008;		typeset -Z4 iniyear  finalyear
 inimonth=1;	finalmonth=12;		typeset -Z2 inimonth finalmonth
 iniday=1;	finalday=31;		typeset -Z2 iniday   finalday
 
@@ -177,15 +177,10 @@ nyear=0			# number of years
 nmonth=3		# number of months
 nday=0 			# number of days
   
-pwd
-ls
-# Source updated date parameters if the file exists
-FILE="date_params" 
-if [ -f $FILE ];
-then 
-   source $FILE
-fi
-
+# Define the minimum time that must be left of the walltime for another
+# experiment to be run. This will prevent the PBS job from running over
+# allocated walltime
+RUN_TIME='1:30:00'
 
 inidate=${iniyear}${inimonth}${iniday}			#YYYYMMDD
 finaldate=${finalyear}${finalmonth}${finalday}		#YYYYMMDD
