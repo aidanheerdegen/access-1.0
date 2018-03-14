@@ -1,6 +1,0 @@
-echo "Sourcing environ"
-
-# Where coupled model was built
-# Change as appropriate
-ACCESS_BINDIR=/short/v45/aph502/ACCESS/bin
-
