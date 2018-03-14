@@ -21,10 +21,10 @@
 # ACCESS_INIT - ksh script to init oasis, cice and mom
 # ACCESS_END - ksh script to postprocess output and handle auto restarts
 #
-#PBS -q express
+#PBS -q normal
 #PBS -l ncpus=144
 #PBS -l mem=288gb
-#PBS -l walltime=4:00:00
+#PBS -l walltime=48:00:00
 #PBS -W umask=0022
 set -x
 set -eu

@@ -180,7 +180,7 @@ nday=0 			# number of days
 # Define the minimum time that must be left of the walltime for another
 # experiment to be run. This will prevent the PBS job from running over
 # allocated walltime
-RUN_TIME='1:30:00'
+RUN_TIME='1:20:00'
 
 inidate=${iniyear}${inimonth}${iniday}			#YYYYMMDD
 finaldate=${finalyear}${finalmonth}${finalday}		#YYYYMMDD
