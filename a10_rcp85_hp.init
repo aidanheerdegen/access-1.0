@@ -168,7 +168,7 @@ caltype=1               #0, 1 or n (eg, 30 for 30 day months)
 cal_type="'gregorian'"
 
 #-- Initial and Final Date of the Experiment
-iniyear=2005;	finalyear=2008;		typeset -Z4 iniyear  finalyear
+iniyear=2005;	finalyear=2009;		typeset -Z4 iniyear  finalyear
 inimonth=1;	finalmonth=12;		typeset -Z2 inimonth finalmonth
 iniday=1;	finalday=31;		typeset -Z2 iniday   finalday
 
