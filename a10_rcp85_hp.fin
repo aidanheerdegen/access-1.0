@@ -303,7 +303,7 @@ function process_results {
 
     wait
     end_time=`date +%s`
-    echo "Elapsed time for collation: " $(($end_time - $start_time)) 
+    echo "Elapsed time for collation: " $(($end_time - $start_time)) " seconds" 
 
     echo "Append correct date to collated ocean data files"
     for histfile in `ls ocean*.nc`; do
