@@ -5,6 +5,9 @@
 # imported variables:
 # OASISRUNDIR
 
+true=0
+false=1
+
 function time2secs {
 
     # Split an hh:mm:ss.ss time stamp on colon and convert to seconds
@@ -72,14 +75,14 @@ function check_error {
 
     if [[ $FCODE -eq 0 ]]; then
         echo "Experiment ran without error, post-processing ... "
-	return 0
+	return $true
 
     elif [[ ($FCODE -eq 1) || ($FCODE -eq 2) ]]; then
         echo "Experiment aborted with a transient error"
         echo "Rerunning"
 	# Returning false (1) means post-processing will not occur, but run
 	# will continue. All other cases fall through to epilogue
-	return 1
+	return $false
 	
     elif [[ ($FCODE -eq 3) || ($FCODE -eq 4) ]]; then
         echo "Experiment aborted with a transient error"
@@ -159,6 +162,8 @@ function process_results {
     ## 5.1 Output files of the coupler (OASIS3)
     #
 
+     echo "Move coupler restarts"
+ 
     # Restart files
     mkdir -p ${archivedir}/restart/cpl
     for resfile in `ls ?2?.nc`; do
@@ -168,6 +173,8 @@ function process_results {
     #
     ## 5.2 Output files of the atmosphere (UM)
     #
+
+    echo "Move atmosphere restarts"
 
     cd $atmrundir
     # check the date
@@ -186,6 +193,8 @@ function process_results {
     fi
     # remove the other (older) atmospheric dumps
     rm -f aiihca.da*
+
+    echo "Move atmosphere outputs"
 
     # move atmospheric monthly files to archive
     #mv aiihca.pe* ${archivedir}/atm
@@ -211,6 +220,8 @@ function process_results {
     ## 5.3 Output files of the ice (cice)
     #
 
+    echo "Move ice restarts"
+
     cd $icerundir
     # Restart files
 
@@ -222,6 +233,8 @@ function process_results {
     mv iced.* ${archivedir}/restart/ice/
     cd ..
 
+    echo "Move ice outputs"
+
     # History files (iceh_*.nc)
     cd $icerundir/HISTORY
     for histfile in `ls ice*`; do
@@ -232,6 +245,8 @@ function process_results {
     ## 5.4 Output files of the ocean (mom4)
     #
 
+    echo "Move ocean restarts"
+
     # Restart files
     cd $ocnrundir/RESTART
     #mkdir -p ${archivedir}/mom/MOM4_restart_${enddate}
@@ -240,14 +255,61 @@ function process_results {
 	mv ${restfile} ${archivedir}/restart/ocn/${restfile}-${enddate}
     done
 
+    echo "Move ocean outputs"
+
     # History files
     cd $ocnrundir/HISTORY
 
-    sdir=`pwd` 
-    tdir=${archivedir}/history/ocn
-    idate=${enddate} mppncombine_exec=$ACCESS_BINDIR/mppnccombine.RAIJIN 
-    $ACCESS_BINDIR/do_mppncombine-cmip5.ksh
+    mppncombine_exec=$ACCESS_BINDIR/mppnccombine.nc4 
 
+    datadir=`pwd`
+    workdir=${archivedir}/history/ocn
+
+    echo "datadir $datadir"
+    echo "workdir $workdir"
+    echo "enddate $enddate"
+
+    cd $workdir
+
+    # clean up (in case do_mppncombine failed last time)
+    badfile=`ls *.nc *.nc.???? | wc -w`
+    if (( $badfile == 0 )); then
+      echo 'Good, no leftover! '
+    else
+      rm *.nc *.nc.????
+    fi
+
+    # there may be some nc files 'ready' (ie, no need for merging), such as scalar.nc
+    goodncfile=`ls $datadir/*.nc | wc -w`
+    if (( $goodncfile == 0 )); then
+      echo 'No ready nc files!'
+    else
+      mv $datadir/*.nc .
+    fi
+    for ncfile in `ls *.nc`; do
+      mv $ncfile ${ncfile}-${enddate}
+    done
+
+    mv $datadir/*.nc.???? .
+
+    echo "Combining ocean data files with mppnccombine"
+
+    start_time=`date +%s`
+    # combine netcdf files
+    for histfile in `ls *.nc.0000`; do
+      newfile=${histfile%.*}              #drop the appendix '.0000'!
+      $mppncombine_exec -n4 -z -v -r $newfile ${newfile}.???? &
+    done
+
+    wait
+    end_time=`date +%s`
+    echo "Elapsed time for collation: " $(($end_time - $start_time)) 
+
+    echo "Append correct date to collated ocean data files"
+    for histfile in `ls ocean*.nc`; do
+      mv $histfile ${histfile}-${enddate}
+    done
+ 
     #
     ## 5.5 Coupling fields output (if any), e.g., fields_i2o_in_ice.nc etc. 
     #
@@ -318,22 +380,18 @@ function finalise_model {
 
 }
 
-function run_again {
+function walltime_remaining {
 
     # Check if here is enough time to run another experiment
 
-    # Check whether final date is reached
-    if ! date_check ; then
-       return 1
-    fi
     tleft=$(timeleft $PBS_JOBID)
     rtime=$(time2secs $RUN_TIME)
     if [[ $tleft -gt $rtime ]]; then
        echo "Run another experiment as $tleft > $rtime"
-       return 0
+       return $true
     else
        echo "Not enough time to Run another experiment as $tleft < $rtime"
-       return 1
+       return $false
     fi
 
 }
@@ -344,9 +402,9 @@ function date_check {
     echo "Current date: $nextdate"
     echo "Final date: $finaldate"
     if [[ $nextdate -gt $finaldate ]]; then
-        return 1
+        return $false
     else
-        return 0
+        return $true
     fi
 
 }
@@ -357,20 +415,22 @@ function continue_experiment {
     if ! date_check ; then
         echo "Experiment over"
         echo "`date` :  Experiment over" >> ${expid}.log
-        return 1
+        return $false
     elif [ -f ${expid}.suspend ] ; then
         echo "Suspending experiment"
         echo "`date` : ${jobnum} ${enddate} - Experiment suspended" >> ${expid}.log
         echo "To resume execute this command: qsub um73-auscom.xe"
-	    return 1
+	    return $false
     else
-        return 0
+        echo "Date within range, and no suspend, so continue experiment"
+        return $true
     fi
 
 }
 
 function submit_run {
     next_jobid=`qsub $RUNID`
+    echo "Next run is submitted: ${next_jobid}"
     echo "Next run is submitted: ${next_jobid}" >> ${expid}.log
     echo "`date` :  Next run is submitted: ${next_jobid}" >> ${expid}.log
 
