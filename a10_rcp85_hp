@@ -209,6 +209,10 @@ else
     
 fi
 
+# Make sure the PATH variable doesn't get appended for every pass through 
+# the main loop below
+ORIG_PATH=$PATH
+
 while true
 do
 
@@ -282,7 +286,7 @@ do
 
     SCRIPT=$ACCESS_BINDIR/um_scripts
 
-    PATH=$PATH:$SCRIPT:$EXEC:$PATH
+    PATH=$ORIG_PATH:$SCRIPT:$EXEC
     # verify that we get the scripts from the correct location
     echo "PATH used = $PATH"
     whence qsexecute
