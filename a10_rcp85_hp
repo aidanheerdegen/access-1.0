@@ -216,6 +216,8 @@ ORIG_PATH=$PATH
 while true
 do
 
+    PATH=$ORIG_PATH
+
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ### START of Users top script insert
     # it's sourced with . which means it's executed inside the current shell
@@ -286,7 +288,7 @@ do
 
     SCRIPT=$ACCESS_BINDIR/um_scripts
 
-    PATH=$ORIG_PATH:$SCRIPT:$EXEC
+    PATH=$PATH:$SCRIPT:$EXEC
     # verify that we get the scripts from the correct location
     echo "PATH used = $PATH"
     whence qsexecute
